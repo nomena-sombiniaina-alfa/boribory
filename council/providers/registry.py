@@ -30,11 +30,6 @@ _ROUTES: dict[str, ModelRoute] = {
         base_url="https://models.github.ai/inference",
         remote_model="openai/gpt-4o-mini",
     ),
-    "o1-mini": ModelRoute(
-        key="github_models",
-        base_url="https://models.github.ai/inference",
-        remote_model="openai/o1-mini",
-    ),
     # -------- Google Gemini (OpenAI-compatible endpoint) --------
     "gemini-2.5-flash": ModelRoute(
         key="google",
