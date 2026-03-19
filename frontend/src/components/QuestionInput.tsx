@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
+import { useLang } from "../contexts/LanguageContext";
 
 interface Props {
   onSubmit: (question: string) => void;
@@ -7,13 +8,14 @@ interface Props {
 }
 
 export function QuestionInput({ onSubmit, disabled }: Props) {
+  const { t } = useLang();
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!ref.current) return;
     ref.current.style.height = "auto";
-    ref.current.style.height = `${Math.min(ref.current.scrollHeight, 200)}px`;
+    ref.current.style.height = `${Math.min(ref.current.scrollHeight, 240)}px`;
   }, [value]);
 
   const submit = () => {
@@ -31,30 +33,29 @@ export function QuestionInput({ onSubmit, disabled }: Props) {
   };
 
   return (
-    <div className="border-t border-ink-200 bg-canvas/80 backdrop-blur">
-      <div className="max-w-4xl mx-auto px-6 py-4">
-        <div className="flex items-end gap-2 bg-surface border border-ink-200 rounded-2xl px-4 py-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft transition">
+    <div className="px-4 pb-4 pt-2 bg-canvas">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-col bg-surface rounded-3xl shadow-input focus-within:shadow-pop transition-shadow">
           <textarea
             ref={ref}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Pose ta question au panel…"
+            placeholder={t("input.placeholder")}
             rows={1}
-            className="flex-1 bg-transparent outline-none resize-none text-sm leading-relaxed placeholder:text-ink-500 max-h-[200px]"
+            className="w-full bg-transparent outline-none resize-none text-[15px] leading-relaxed placeholder:text-ink-400 px-5 pt-4 pb-2 min-h-[64px] max-h-[240px]"
             disabled={disabled}
           />
-          <button
-            onClick={submit}
-            disabled={!value.trim() || disabled}
-            className="shrink-0 w-9 h-9 rounded-xl bg-accent text-white grid place-items-center disabled:bg-ink-300 disabled:cursor-not-allowed transition"
-            aria-label="Envoyer"
-          >
-            <ArrowUp size={18} />
-          </button>
-        </div>
-        <div className="mt-2 text-xs text-ink-500 text-center">
-          Entrée pour envoyer · Maj+Entrée pour une nouvelle ligne
+          <div className="flex justify-end px-3 pb-3">
+            <button
+              onClick={submit}
+              disabled={!value.trim() || disabled}
+              className="shrink-0 w-9 h-9 rounded-full bg-primary text-primary-fg grid place-items-center disabled:bg-ink-200 disabled:text-ink-400 disabled:cursor-not-allowed hover:bg-primary-hover transition"
+              aria-label={t("input.send")}
+            >
+              <ArrowUp size={17} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
