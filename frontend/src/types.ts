@@ -1,7 +1,6 @@
 export type ModelId =
   | "gpt-4o"
   | "gpt-4o-mini"
-  | "o1-mini"
   | "gemini-2.5-flash"
   | "gemini-2.5-pro"
   | "llama-3.3-70b"
@@ -50,6 +49,7 @@ export interface Turn {
   question: string;
   responses: ResponseChunk[];
   createdAt: string;
+  parentTurnId: string | null;
 }
 
 export interface Conversation {
@@ -63,5 +63,4 @@ export interface Conversation {
 export interface User {
   id: number;
   username: string;
-  email: string;
 }

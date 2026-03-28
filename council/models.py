@@ -27,6 +27,16 @@ class Turn(models.Model):
     conversation = models.ForeignKey(
         Conversation, on_delete=models.CASCADE, related_name="turns"
     )
+    # When set, this turn is a follow-up rendered inside the referenced root
+    # turn's card (single model). When null, it's a root multi-model turn
+    # shown at the top level of the thread.
+    parent_turn = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="follow_ups",
+    )
     question = models.TextField()
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

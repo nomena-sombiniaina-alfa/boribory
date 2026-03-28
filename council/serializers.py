@@ -14,10 +14,20 @@ class ResponseSerializer(serializers.ModelSerializer):
 class TurnSerializer(serializers.ModelSerializer):
     responses = ResponseSerializer(many=True, read_only=True)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+    parentTurnId = serializers.PrimaryKeyRelatedField(
+        source="parent_turn", read_only=True, allow_null=True
+    )
 
     class Meta:
         model = Turn
-        fields = ["id", "question", "order", "createdAt", "responses"]
+        fields = [
+            "id",
+            "question",
+            "order",
+            "createdAt",
+            "responses",
+            "parentTurnId",
+        ]
 
 
 class ConversationSerializer(serializers.ModelSerializer):
