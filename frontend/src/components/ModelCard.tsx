@@ -1,5 +1,6 @@
 import { Check, Building2, Globe, Calendar, Gauge, Boxes } from "lucide-react";
 import type { ModelInfo } from "../types";
+import { useLang } from "../contexts/LanguageContext";
 
 interface Props {
   model: ModelInfo;
@@ -9,77 +10,81 @@ interface Props {
 }
 
 export function ModelCard({ model, selected, disabled, onToggle }: Props) {
+  const { t } = useLang();
   return (
     <button
       onClick={onToggle}
       disabled={disabled}
-      className={`text-left rounded-2xl border border-ink-200 p-5 transition flex flex-col ${
+      className={`text-left rounded-2xl p-5 transition flex flex-col shadow-card ${
         selected
-          ? "bg-emerald-100 hover:bg-emerald-100"
-          : "bg-surface hover:border-ink-300"
+          ? "bg-surface ring-2 ring-primary"
+          : "bg-surface hover:shadow-pop"
       } ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <div className="font-semibold tracking-tight truncate">
-            {model.label}
-          </div>
-          <div className="text-xs text-ink-500 mt-0.5">
-            {model.providerLabel} · {model.dailyQuota}
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0 flex items-center gap-2.5">
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ background: model.accent }}
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <div className="font-semibold tracking-tight truncate text-ink-900">
+              {model.label}
+            </div>
+            <div className="text-[11px] text-ink-500 mt-0.5 truncate">
+              {model.providerLabel} · {model.dailyQuota}
+            </div>
           </div>
         </div>
         <div
-          className={`shrink-0 w-5 h-5 rounded border grid place-items-center ${
+          className={`shrink-0 w-5 h-5 rounded-full grid place-items-center transition ${
             selected
-              ? "bg-emerald-600 border-emerald-600 text-white"
-              : "border-ink-300 bg-surface"
+              ? "bg-primary text-primary-fg"
+              : "bg-ink-100 text-transparent"
           }`}
         >
-          {selected && <Check size={13} strokeWidth={3} />}
+          <Check size={12} strokeWidth={3} />
         </div>
       </div>
 
-      <dl className="space-y-1.5 text-xs text-ink-700 mb-3">
-        <Row icon={<Building2 size={13} />} label="Entreprise">
+      <dl className="space-y-1.5 text-xs text-ink-700 mb-4">
+        <Row icon={<Building2 size={13} />} label={t("model.company")}>
           {model.company}
         </Row>
-        <Row icon={<Globe size={13} />} label="Pays">
+        <Row icon={<Globe size={13} />} label={t("model.country")}>
           {model.companyCountry}
         </Row>
-        <Row icon={<Calendar size={13} />} label="Sortie">
+        <Row icon={<Calendar size={13} />} label={t("model.released")}>
           {model.released}
         </Row>
-        <Row icon={<Boxes size={13} />} label="Taille">
+        <Row icon={<Boxes size={13} />} label={t("model.size")}>
           {model.paramsLabel}
         </Row>
-        <Row icon={<Gauge size={13} />} label="Contexte">
+        <Row icon={<Gauge size={13} />} label={t("model.context")}>
           {model.contextWindow}
         </Row>
       </dl>
 
       {model.arenaElo !== null && (
-        <div
-          className={`rounded-lg px-3 py-2 mb-3 ${
-            selected ? "bg-emerald-50" : "bg-ink-100/70"
-          }`}
-        >
-          <div className="text-[11px] uppercase tracking-wider text-ink-500">
-            LMSYS Chatbot Arena
+        <div className="rounded-xl px-3.5 py-2.5 mb-3 bg-ink-100/70">
+          <div className="text-[10px] uppercase tracking-wider text-ink-500 font-medium">
+            {t("model.arenaTitle")}
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-semibold tabular-nums">
+          <div className="flex items-baseline gap-2 mt-0.5">
+            <span className="text-xl font-semibold tabular-nums text-ink-900">
               {model.arenaElo}
             </span>
             <span className="text-[11px] text-ink-500">
-              ELO · {model.arenaNote ?? "public"}
+              ELO · {model.arenaNote ?? t("model.arenaPublic")}
             </span>
           </div>
         </div>
       )}
 
-      <ul className="mt-auto space-y-1 text-xs text-ink-700">
+      <ul className="mt-auto space-y-1.5 text-xs text-ink-700">
         {model.highlights.map((h, i) => (
-          <li key={i} className="flex gap-1.5">
+          <li key={i} className="flex gap-2 leading-relaxed">
             <span
               className="mt-1.5 w-1 h-1 rounded-full shrink-0"
               style={{ background: model.accent }}

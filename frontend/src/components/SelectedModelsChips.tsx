@@ -19,8 +19,12 @@ export function SelectedModelsChips({ selected, align = "right" }: Props) {
         return (
           <span
             key={id}
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-surface border border-ink-200"
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium text-ink-700 bg-ink-100"
           >
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: m.accent }}
+            />
             {m.label}
           </span>
         );
