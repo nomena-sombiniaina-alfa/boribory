@@ -2,6 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root,
+  html.light {
+    /* Light: white canvas + violet surfaces + blue accent */
+    --canvas: 255 255 255;
+    --surface: 250 244 253;
+    --sidebar: 255 255 255;
+
+    --ink-100: 244 236 251;
+    --ink-200: 230 217 243;
+    --ink-300: 198 181 217;
+    --ink-400: 140 128 165;
+    --ink-500: 96 103 138;
+    --ink-700: 45 55 90;
+    --ink-900: 10 18 36;
+
+    --primary: 59 130 246;        /* blue */
+    --primary-hover: 37 99 235;
+    --primary-soft: 219 234 254;
+    --primary-fg: 255 255 255;
+
+    --accent: 168 85 247;         /* violet */
+    --accent-soft: 243 232 255;
+
+    --danger: 220 38 38;
+    --shadow-rgb: 30 20 60;
+  }
+
+  html.dark {
+    /* Dark: near-black canvas + midnight-blue surfaces + blood-red accent */
+    --canvas: 2 5 11;
+    --surface: 12 29 46;
+    --sidebar: 5 11 20;
+
+    --ink-100: 12 29 46;
+    --ink-200: 23 51 84;
+    --ink-300: 50 75 110;
+    --ink-400: 110 125 155;
+    --ink-500: 167 176 197;
+    --ink-700: 216 223 240;
+    --ink-900: 237 241 250;
+
+    --primary: 139 0 0;           /* blood red */
+    --primary-hover: 171 24 48;
+    --primary-soft: 42 8 14;
+    --primary-fg: 255 255 255;
+
+    --accent: 23 51 84;           /* midnight blue */
+    --accent-soft: 12 31 51;
+
+    --danger: 212 24 61;
+    --shadow-rgb: 139 0 0;
+  }
+}
+
 html,
 body,
 #root {
@@ -10,15 +65,30 @@ body,
 
 body {
   @apply bg-canvas text-ink-900 font-sans antialiased;
+  font-feature-settings: "ss01", "cv11";
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-ink-200 rounded-full;
+  background: rgb(var(--ink-300) / 0.7);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-ink-300;
+  background: rgb(var(--ink-400));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--ink-300) / 0.7) transparent;
 }
