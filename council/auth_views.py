@@ -13,7 +13,6 @@ def _user_payload(user, token: str | None = None) -> dict:
     data = {
         "id": user.id,
         "username": user.username,
-        "email": user.email,
     }
     if token is not None:
         data["token"] = token
@@ -24,7 +23,6 @@ def _user_payload(user, token: str | None = None) -> dict:
 @permission_classes([AllowAny])
 def register(request):
     username = (request.data.get("username") or "").strip()
-    email = (request.data.get("email") or "").strip()
     password = request.data.get("password") or ""
 
     if not username or not password:
@@ -39,9 +37,7 @@ def register(request):
         )
 
     try:
-        user = User.objects.create_user(
-            username=username, email=email, password=password
-        )
+        user = User.objects.create_user(username=username, password=password)
     except IntegrityError:
         return Response(
             {"detail": "ce nom d'utilisateur existe déjà"},
@@ -76,7 +72,27 @@ def logout(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(["GET"])
+@api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def me(request):
+    if request.method == "PATCH":
+        username = (request.data.get("username") or "").strip()
+        if not username:
+            return Response(
+                {"detail": "username requis"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if username != request.user.username:
+            exists = (
+                User.objects.filter(username=username)
+                .exclude(pk=request.user.pk)
+                .exists()
+            )
+            if exists:
+                return Response(
+                    {"detail": "ce nom d'utilisateur existe déjà"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            request.user.username = username
+            request.user.save(update_fields=["username"])
     return Response(_user_payload(request.user))

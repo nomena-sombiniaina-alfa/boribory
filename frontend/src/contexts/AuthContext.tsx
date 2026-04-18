@@ -16,12 +16,9 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (
-    username: string,
-    email: string,
-    password: string,
-  ) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUsername: (username: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -51,15 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({ username, password }),
         });
         tokenStore.set(r.token);
-        setUser({ id: r.id, username: r.username, email: r.email });
+        setUser({ id: r.id, username: r.username });
       },
-      async register(username, email, password) {
+      async register(username, password) {
         const r = await api<AuthPayload>("/auth/register/", {
           method: "POST",
-          body: JSON.stringify({ username, email, password }),
+          body: JSON.stringify({ username, password }),
         });
         tokenStore.set(r.token);
-        setUser({ id: r.id, username: r.username, email: r.email });
+        setUser({ id: r.id, username: r.username });
       },
       async logout() {
         try {
@@ -68,6 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           tokenStore.clear();
           setUser(null);
         }
+      },
+      async updateUsername(username) {
+        const r = await api<User>("/auth/me/", {
+          method: "PATCH",
+          body: JSON.stringify({ username }),
+        });
+        setUser({ id: r.id, username: r.username });
       },
     }),
     [user, loading],
