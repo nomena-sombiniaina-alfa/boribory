@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ChevronsRight } from "lucide-react";
+import { Loader2, PanelLeftOpen } from "lucide-react";
 import { Sidebar } from "./components/Sidebar";
 import { SelectedModelsChips } from "./components/SelectedModelsChips";
 import { ChatThread } from "./components/ChatThread";
 import { QuestionInput } from "./components/QuestionInput";
 import { ModelGallery } from "./components/ModelGallery";
 import { AuthPage } from "./components/auth/AuthPage";
+import { SettingsModal } from "./components/SettingsModal";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider, useLang } from "./contexts/LanguageContext";
 import {
   listConversations,
   fetchConversation,
   createConversation,
   updateConversation,
   askQuestion,
+  bulkDeleteConversations,
+  deleteAllConversations,
 } from "./api/conversations";
 import type { Conversation, ModelId, ResponseChunk, Turn } from "./types";
 
@@ -21,12 +26,14 @@ const truncateTitle = (s: string) =>
   s.length > TITLE_MAX ? s.slice(0, TITLE_MAX) + "…" : s;
 
 function Shell() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUsername } = useAuth();
+  const { t } = useLang();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [bootLoading, setBootLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     listConversations()
@@ -61,6 +68,20 @@ function Shell() {
     }
   };
 
+  const handleDeleteSelected = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    await bulkDeleteConversations(ids);
+    const idSet = new Set(ids);
+    setConversations((prev) => prev.filter((c) => !idSet.has(c.id)));
+    if (activeId && idSet.has(activeId)) setActiveId(null);
+  };
+
+  const handleDeleteAll = async () => {
+    await deleteAllConversations();
+    setConversations([]);
+    setActiveId(null);
+  };
+
   const handleNew = async () => {
     try {
       setBusy(true);
@@ -85,15 +106,25 @@ function Shell() {
     }
   };
 
-  const handleAsk = async (question: string) => {
+  const handleAsk = async (
+    question: string,
+    targetModels?: ModelId[],
+    parentTurnId?: string,
+  ) => {
     if (!active) return;
+
+    const modelsForTurn: ModelId[] =
+      targetModels && targetModels.length > 0
+        ? targetModels
+        : active.selectedModels;
 
     const tempId = "temp-" + crypto.randomUUID();
     const optimistic: Turn = {
       id: tempId,
       question,
       createdAt: new Date().toISOString(),
-      responses: active.selectedModels.map<ResponseChunk>((id) => ({
+      parentTurnId: parentTurnId ?? null,
+      responses: modelsForTurn.map<ResponseChunk>((id) => ({
         modelId: id,
         status: "pending",
         content: "",
@@ -102,7 +133,12 @@ function Shell() {
     patchConv(active.id, { turns: [...active.turns, optimistic] });
 
     try {
-      const realTurn = await askQuestion(active.id, question);
+      const realTurn = await askQuestion(
+        active.id,
+        question,
+        targetModels,
+        parentTurnId,
+      );
       setConversations((prev) =>
         prev.map((c) =>
           c.id !== active.id
@@ -119,7 +155,7 @@ function Shell() {
         ),
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "erreur réseau";
+      const msg = err instanceof Error ? err.message : t("error.network");
       setConversations((prev) =>
         prev.map((c) =>
           c.id !== active.id
@@ -163,27 +199,38 @@ function Shell() {
         onLogout={logout}
         onCollapse={() => setSidebarCollapsed(true)}
         collapsed={sidebarCollapsed}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        user={user}
+        conversations={conversations}
+        onUpdateUsername={updateUsername}
+        onDeleteSelected={handleDeleteSelected}
+        onDeleteAll={handleDeleteAll}
       />
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="px-6 py-3 border-b border-ink-200 bg-canvas/80 backdrop-blur">
+        <header className="px-6 pt-4 pb-3 bg-canvas/80 backdrop-blur sticky top-0 z-10">
           <div className="flex items-start gap-3">
             {sidebarCollapsed && (
               <button
                 onClick={() => setSidebarCollapsed(false)}
-                className="p-1.5 -ml-1.5 text-ink-500 hover:text-ink-900 hover:bg-ink-100 rounded transition shrink-0"
-                title="Afficher la barre latérale"
-                aria-label="Afficher la barre latérale"
+                className="p-1.5 -ml-1.5 text-ink-500 hover:text-ink-900 hover:bg-ink-200/60 rounded-md transition shrink-0"
+                title={t("sidebar.expand")}
+                aria-label={t("sidebar.expand")}
               >
-                <ChevronsRight size={16} />
+                <PanelLeftOpen size={16} />
               </button>
             )}
-            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
               <h2
-                className="font-medium truncate"
-                title={active?.title ?? "Accueil"}
+                className="text-[15px] font-medium text-ink-900 truncate"
+                title={active?.title ?? t("header.home")}
               >
-                {truncateTitle(active?.title ?? "Accueil")}
+                {truncateTitle(active?.title ?? t("header.home"))}
               </h2>
               {active && active.selectedModels.length > 0 && (
                 <SelectedModelsChips
@@ -198,20 +245,19 @@ function Shell() {
         <div className="flex-1 overflow-y-auto">
           {!active && (
             <div className="h-full grid place-items-center text-center px-6">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight mb-2">
-                  Bienvenue, {user?.username}.
+              <div className="max-w-md">
+                <h1 className="text-3xl font-semibold tracking-tight mb-3 text-ink-900">
+                  {t("welcome.title", { name: user?.username ?? "" })}
                 </h1>
-                <p className="text-ink-500 mb-6">
-                  Démarre une discussion pour interroger plusieurs IA en
-                  parallèle.
+                <p className="text-ink-500 mb-8 leading-relaxed">
+                  {t("welcome.subtitle")}
                 </p>
                 <button
                   onClick={handleNew}
                   disabled={busy}
-                  className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+                  className="bg-primary text-primary-fg hover:bg-primary-hover rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-60 transition shadow-card"
                 >
-                  Nouvelle discussion
+                  {t("welcome.cta")}
                 </button>
               </div>
             </div>
@@ -221,7 +267,14 @@ function Shell() {
             <ModelGallery onStart={handleStartFromGallery} />
           )}
 
-          {active && !showGallery && <ChatThread turns={active.turns} />}
+          {active && !showGallery && (
+            <ChatThread
+              turns={active.turns}
+              onReplyToModel={(id, q, parentTurnId) =>
+                handleAsk(q, [id], parentTurnId)
+              }
+            />
+          )}
         </div>
 
         {active && !showGallery && (
@@ -249,8 +302,12 @@ function Gate() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Gate />
-    </AuthProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Gate />
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
