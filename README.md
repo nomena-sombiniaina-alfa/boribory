@@ -2,6 +2,22 @@
 
 Un "panel de conseil" : tu poses une question, plusieurs modèles d'IA te répondent en parallèle, chaque réponse dans sa propre carte. Tu choisis jusqu'à 6 modèles parmi 11 à chaque nouvelle discussion.
 
+## Pourquoi ?
+
+Boribory est né d'un incident trouvé en prod : on avait besoin d'**avoir plusieurs avis d'IA en même temps** pour diagnostiquer le problème, et surtout de pouvoir **clarifier la réponse d'un modèle quand elle était confuse ou douteuse**, en **discutant directement avec ce modèle-là** sans relancer toute la batterie ni perdre le contexte des autres. L'outil a été taillé pour ce cas précis : **usage interne en équipe**, quelques profils, tout le monde sur la même instance. Ce n'est **pas prévu pour un gros volume d'utilisateurs** ni exposé publiquement — d'où l'absence d'authentification durcie (pas de 2FA, pas d'email, pas de vérification, juste `username` + `password`). L'idée c'est qu'on monte l'instance sur une machine partagée et que l'équipe y entre vite.
+
+D'où les choix suivants :
+
+- **Arrêter de switcher entre les tabs** — une seule question, une seule interface, toutes les réponses en parallèle dans un même écran. Plus de copier-coller, plus d'oubli d'un modèle.
+- **Comparer côte à côte** — chaque IA répond dans sa propre carte. Tu vois d'un coup d'œil qui est d'accord avec qui, qui hallucine, qui nuance. L'erreur d'un modèle saute aux yeux quand les autres disent l'inverse.
+- **Clarifier une réponse en tête-à-tête** — quand une carte te laisse perplexe, clique "Répondre" dessus : un mini-input apparaît dans la carte et tu continues la discussion uniquement avec ce modèle, pour lever l'ambiguïté sans relancer les autres.
+- **Plusieurs profils pour partager avec l'équipe** — authentification par utilisateur, chacun garde ses propres conversations privées. Chaque membre s'inscrit, personne ne voit les discussions des autres, mais tout le monde partage la même instance et les mêmes clés API.
+- **Auth volontairement légère** — pas de 2FA, pas d'email, pas de récupération par lien. L'outil est pensé pour tourner en interne (VPN, LAN, ou machine d'équipe) — si tu l'exposes sur Internet public, ajoute une couche devant (reverse proxy avec auth, SSO, etc.).
+- **Mutualiser les clés API** — une seule config `.env` côté serveur, tous les membres bénéficient des tiers gratuits des 7 providers (~5-50 req/jour/modèle) sans que chacun doive créer un compte chez OpenAI, Google, Groq, Mistral, Cohere, DeepSeek, OpenRouter.
+- **Ne pas dépendre d'un seul fournisseur** — si GitHub Models tombe ou change ses quotas, Gemini et Mistral continuent. Si un provider retire un modèle, tu en ajoutes un autre dans `registry.py`.
+- **Réduire le biais d'un seul modèle** — poser la même question à 6 LLM d'entraînements différents donne un signal plus robuste qu'une seule réponse, surtout sur les sujets où un modèle unique serait tenté de te dire ce que tu veux entendre.
+- **Rester souverain sur les données** — self-hosted, SQLite en dev, rien ne sort vers un SaaS intermédiaire. Les conversations vivent sur ta machine ou ton serveur, pas dans un dashboard tiers.
+
 ## Stack
 
 - **Backend** : Django 4.2 + Django REST Framework (auth par token). BDD : SQLite en dev.
